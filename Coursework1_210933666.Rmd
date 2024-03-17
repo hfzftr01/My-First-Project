@@ -1,0 +1,78 @@
+---
+title: "Time Series Analysis"
+subtitle: "Exploring a time series using Meta's Prophet forecasting system"
+author:
+- name: Hafiz Fitri Bin Mohammed Shaufi
+date: "17 March 2024"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+### 1. Introduction 
+
+A time series is a variable sampled through time. We use time series for several reasons such as recognizing patterns and trends within the data. More importantly, we can use it to forecast future values based on historical data. These two things are one of the few things that I have learned in the Time Series module. 
+
+The purpose of the project is to look at the time series of CO2 concentration which is observed monthly from Jan 1959 to Dec 1997. Then, I look at forecasting the observations for another 2 years, to predict the future values of the CO2 concentration. This is done by the forecasting tool developed by Meta's Prophet.
+
+The data set that I used is the past observations of Mauna Loa Atmospheric CO2 Concentration. The CO2 concentrations unit are parts per million (ppm). 
+
+### 2. Data Analysis
+
+Now, let us explore the time series of the CO2 concentration.
+
+Prior to loading the library(prophet), I have used/installed the latest version as suggested by Meta. Then, I run the following R code below and get the following time series graph:
+
+```{r, echo=FALSE}
+htmltools::img(src = knitr::image_uri("QMlogo.png"), 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px; width:30%;')
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+co2.df = data.frame(
+  ds=zoo::as.yearmon(time(co2)), 
+  y=co2)
+NoSeasonalityModel = prophet::prophet(co2.df, daily.seasonality = FALSE, weekly.seasonality = FALSE)
+Next2Year = prophet::make_future_dataframe(NoSeasonalityModel, periods=8, freq="quarter")
+p = predict(NoSeasonalityModel, Next2Year)
+plot(NoSeasonalityModel,p)
+```
+
+Since the model does not consider seasonality, I have coded the "daily.seasonality=FALSE" and "weekly.seasonality=FALSE" to stop the message prompt to appear. 
+
+From the plot, we can see that the time series move in a consistent oscillating manner over time, that is upwards and downwards. Overall, the graph is increasing, indicating that the concentration of CO2 also getting higher over the years. We can also observe that for the next 2 years (until Jan 2000), the predicted values of CO2 concentration follows the same pattern, moving up and down but increasing.
+
+Next, I will look at individual components of a time series using the code below that breaks time series into trend, seasonal and randomness.
+
+```{r}
+plot(decompose(co2))
+```
+
+Our observed data coincide with the increasing trend, while the seasonal shows constant pattern since seasonality is not considered. 
+
+Other thing to note is the randomness or noise suggests a homoscedasticity situation. The noise is shorter for a short period, from 1975 to 1980 while the rest of the years are of the same length, on average. 
+
+For the next part, we will look at the linear regression of the model. This can be helpful to understand the relationship between number of years and CO2 concentrations. 
+
+```{r}
+model = lm(y~ds, data = co2.df)
+model
+summary(model)
+y= fitted(model)
+frequency(co2)
+```
+
+From the summary, we can see that the coefficients of (ds), which is the slope of the line is positive, implying an increasing function. The generalized linear model is in the form of y=1.307x-2249.774. The coefficients also tell us that approximately 1.307ppm of C02 is produced each month. 
+
+Furthermore, the residuals' median implies that the distribution is symmetrical and the multiple R-squared's value of 0.9694 indicates that the model is fitting the data well. In other words, this relatively high value tell us that the years explains the variation within the CO2 concentration well.
+ 
+### 3. Conclusion
+
+The time series of CO2 concentration is a simple one, which is really easy to understand. From this exploration, we can conclude that the concentration of CO2 has been increasing from 1959 and is predicted to continue increasing over time, exhibiting same pattern throughout the years. 
+
